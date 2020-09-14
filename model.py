@@ -15,8 +15,6 @@ class Model:
     words: dict = {}
 
     def add_pair(self, first: str, second: str):
-        if first == 'многонациональный' or second == 'многонациональный':
-            pass
         if not first or not second:
             return
         words1 = self.words.get(first, {})
