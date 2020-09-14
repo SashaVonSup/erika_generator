@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from sys import argv
-from model import Model
+from model import Model, START
 
 
 if __name__ == '__main__':
@@ -10,8 +10,10 @@ if __name__ == '__main__':
         exit(1)
     model = Model()
     model.load(argv[1])
-    if len(argv) < 3:
-        res = model.generate('\1')
-    else:
-        res = argv[2:] + list(model.generate(argv[-1].lower()))[:-1]
+    start = argv[-1].lower() if len(argv) >= 3 else START
+    res = []
+    while len(res) < 2:
+        res = [i for i in model.generate(start)]
+    res = argv[2:] + res[:-1]
+
     print(*res)

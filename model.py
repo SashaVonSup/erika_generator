@@ -5,11 +5,18 @@ from random import randint
 from bisect import bisect_left
 
 
+spaces = ' \n\t\v'
+dots = '.!?'
+START = '\\1'
+END = '\\0'
+
+
 class Model:
     words: dict = {}
-    spaces = ' \n\t\v'
 
     def add_pair(self, first: str, second: str):
+        if first == 'многонациональный' or second == 'многонациональный':
+            pass
         if not first or not second:
             return
         words1 = self.words.get(first, {})
@@ -19,16 +26,24 @@ class Model:
     def fit(self, filename: str):
         with open(filename) as file:
             text = file.read()
-        prev = '\1'  # '\1' вместо начала текста
+        prev = START
         cur = ''
         for c in text:
-            if c in self.spaces:
+            if c in spaces:
                 self.add_pair(prev, cur)
-                prev, cur = cur, ''
+                if cur:
+                    prev, cur = cur, ''
+            elif c in dots:
+                if cur:
+                    self.add_pair(prev, cur)
+                    self.add_pair(cur, END)
+                else:
+                    self.add_pair(prev, END)
+                prev, cur = START, ''
             elif c.isalpha():
                 cur += c.lower()
         self.add_pair(prev, cur)
-        self.add_pair(cur, '\0')  # '\0' вместо конца текста
+        self.add_pair(cur if cur else prev, END)
 
     def save(self, filename: str):
         with open(filename, 'wb') as file:
@@ -39,13 +54,13 @@ class Model:
             self.words = pickle.load(file)
 
     def generate(self, start: str):
-        word = start
-        while word != '\0':
+        word = start if start in self.words.keys() else START
+        while word != END:
             cur = self.words[word]
-            words = cur.keys()
+            words = list(cur.keys())
             weights = [0] * len(words)
             for i in range(len(words)):
                 weights[i] = weights[i-1] + cur[words[i]]
             x = randint(0, weights[-1])
-            cur = bisect_left(weights, x)
-            yield cur
+            word = words[bisect_left(weights, x)]
+            yield word
